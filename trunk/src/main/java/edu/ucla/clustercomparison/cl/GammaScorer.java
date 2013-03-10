@@ -26,11 +26,11 @@ import edu.ucla.clustercomparison.BaseScorer;
 import edu.ucla.clustercomparison.Evaluation;
 import edu.ucla.clustercomparison.GoodmanKruskalGamma;
 
-import java.io.*;
 
-import java.util.*;
-
-
+/**
+ * The command-line program for comparing two sense labelings using {@link
+ * GoodmanKruskalGamma}.
+ */
 public class GammaScorer extends CliRunner {
 
     @Override protected Evaluation getEvaluation() {
@@ -42,23 +42,6 @@ public class GammaScorer extends CliRunner {
     }
 
     public static void main(String[] args) throws Exception {   
-
-        if (args.length < 2) {
-            System.out.println(
-                "usage: java -jar perception.jar gold.key " +
-                "to-test.key [remapped.key]\n\n" +
-                "The last argument specifies an optional output file that\n"+
-                "contains the labeling of the to-test.key after the sense-remapping has\n"+
-                "been performed.");
-            return;     
-        }
-
-        WeightedTauScorer rs = new WeightedTauScorer();
-        boolean performRemapping = !args[0].equals("--no-remapping");
-        int start = (!performRemapping) ? 1 : 0;
-
-        rs.score(new File(args[start]), new File(args[start+1]), 
-                 (args.length > start+2) ? new File(args[start+2]) : null,
-                 performRemapping);
+        new GammaScorer().run(args);
     }
 }

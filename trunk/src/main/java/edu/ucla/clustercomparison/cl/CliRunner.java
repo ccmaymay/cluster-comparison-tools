@@ -96,11 +96,10 @@ public abstract class CliRunner {
                 }
             };
 
-        boolean performRemapping = opts.hasOption("--no-remapping");
-        File remappedKeyFile = opts.hasOption("--output-remapped-key")
-            ? new File(opts.getStringOption("--output-remapped-key"))
+        boolean performRemapping = !opts.hasOption("no-remapping");
+        File remappedKeyFile = opts.hasOption("output-remapped-key")
+            ? new File(opts.getStringOption("output-remapped-key"))
             : null;
-
 
         try {
             scorer.score(new File(opts.getPositionalArg(0)),
