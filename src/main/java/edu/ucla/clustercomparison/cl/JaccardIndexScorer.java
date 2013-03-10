@@ -26,38 +26,22 @@ import edu.ucla.clustercomparison.BaseScorer;
 import edu.ucla.clustercomparison.Evaluation;
 import edu.ucla.clustercomparison.JaccardIndex;
 
-import java.io.*;
 
-import java.util.*;
+/**
+ * The command-line program for comparing two sense labelings using {@link
+ * JaccardIndex}.
+ */
+public class JaccardIndexScorer extends CliRunner {
 
-import java.util.logging.*;
-
-public class JaccardIndexScorer extends BaseScorer {
-
-    protected Evaluation getEvaluation() {
+    @Override protected Evaluation getEvaluation() {
         return new JaccardIndex();
     }
 
+    @Override protected String getEvalName() {
+        return "Jaccard Index";
+    }
+
     public static void main(String[] args) throws Exception {   
-        if (args.length < 2) {
-            System.out.println(
-                "usage: java -jar detection.jar gold.key " +
-                "to-test.key [remapped.key]\n\n" +
-                "The last argument specifies an optional output file that\n"+
-                "contains the labeling of the to-test.key after the sense-remapping has\n"+
-                "been performed."
-
-                + "\n\nFor questions, comments, or bug reports, please contact the\n" +
-                "SemEval-2013 Google groups: semeval2013-sense-induction@groups.google.com");
-            return;     
-        }
-
-        JaccardIndexScorer ds = new JaccardIndexScorer();
-        boolean performRemapping = !args[0].equals("--no-remapping");
-        int start = (!performRemapping) ? 1 : 0;
-
-        ds.score(new File(args[start]), new File(args[start+1]), 
-                 (args.length > start+2) ? new File(args[start+2]) : null,
-                 performRemapping);
+        new JaccardIndexScorer().run(args);
     } 
 }

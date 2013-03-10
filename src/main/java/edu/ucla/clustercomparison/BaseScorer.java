@@ -36,23 +36,6 @@ import java.util.logging.*;
  */
 public abstract class BaseScorer {
     
-    /*
-     * For the moment, this mapping is a giant hack and is hard coded for the
-     * trial data...  Will fix in the next release.
-     */    
-    static final Map<String,Integer> TERM_TO_NUM_SENSES = 
-        new HashMap<String,Integer>();
-    static {
-        TERM_TO_NUM_SENSES.put("add.v", 6);
-        TERM_TO_NUM_SENSES.put("argument.n", 7);
-        TERM_TO_NUM_SENSES.put("ask.v", 7);
-        TERM_TO_NUM_SENSES.put("different.a", 5);
-        TERM_TO_NUM_SENSES.put("important.a", 5);
-        TERM_TO_NUM_SENSES.put("interest.n", 7);
-        TERM_TO_NUM_SENSES.put("paper.n", 7);
-        TERM_TO_NUM_SENSES.put("win.v", 4);        
-    }
-
     static final int randomSeed = 42;
 
     /**

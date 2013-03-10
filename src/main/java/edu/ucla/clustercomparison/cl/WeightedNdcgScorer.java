@@ -26,38 +26,22 @@ import edu.ucla.clustercomparison.BaseScorer;
 import edu.ucla.clustercomparison.Evaluation;
 import edu.ucla.clustercomparison.WeightedNormalizedDiscountedCumulativeGain;
 
-import java.io.*;
-
-import java.util.*;
-
 
 /**
  * The command-line program for running the {@link
  * WeightedNormalizedDiscountedCumulativeGain} class
  */
-public class WeightedNdcgScorer extends BaseScorer {
+public class WeightedNdcgScorer extends CliRunner {
 
-    protected Evaluation getEvaluation() {
+    @Override protected Evaluation getEvaluation() {
         return new WeightedNormalizedDiscountedCumulativeGain();
     }
 
+    @Override protected String getEvalName() {
+        return "Weighted Normalized Discounted Cumulative Gain";
+    }
+
     public static void main(String[] args) throws Exception {   
-        if (args.length < 2) {
-            System.out.println(
-                "usage: java -jar perception.jar gold.key " +
-                "to-test.key [remapped.key]\n\n" +
-                "The last argument specifies an optional output file that\n"+
-                "contains the labeling of the to-test.key after the sense-remapping has\n"+
-                "been performed.");
-            return;     
-        }
-
-        WeightedNdcgScorer rs = new WeightedNdcgScorer();
-        boolean performRemapping = !args[0].equals("--no-remapping");
-        int start = (!performRemapping) ? 1 : 0;
-
-        rs.score(new File(args[start]), new File(args[start+1]), 
-                 (args.length > start+2) ? new File(args[start+2]) : null,
-                 performRemapping);
+        new WeightedNdcgScorer().run(args);
     }
 }
