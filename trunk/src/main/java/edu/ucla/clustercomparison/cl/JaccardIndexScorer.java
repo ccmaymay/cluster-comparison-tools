@@ -20,7 +20,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package edu.ucla.clustercomparison;
+package edu.ucla.clustercomparison.cl;
+
+import edu.ucla.clustercomparison.BaseScorer;
+import edu.ucla.clustercomparison.Evaluation;
+import edu.ucla.clustercomparison.JaccardIndex;
 
 import java.io.*;
 
@@ -30,8 +34,8 @@ import java.util.logging.*;
 
 public class JaccardIndexScorer extends BaseScorer {
 
-    protected GradedSenseDetection getEvaluation() {
-        return new GradedSenseDetection();
+    protected Evaluation getEvaluation() {
+        return new JaccardIndex();
     }
 
     public static void main(String[] args) throws Exception {   
