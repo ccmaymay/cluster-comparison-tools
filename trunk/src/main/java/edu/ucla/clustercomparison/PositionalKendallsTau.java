@@ -73,20 +73,23 @@ public class PositionalKendallsTau extends AbstractEvaluation {
         for (int i = 0; i < delta.length; ++i) 
             delta[i] = 1 - (i / (double)numSenses);
 
+        // p contains the penality for swaps at each positional distance
         double[] p = new double[n];
         Arrays.fill(p, 1);
         for (int i = 1; i < p.length; ++i) {
             for (int j = 0; j < i; ++j)
                 p[i] += delta[j];
         }
-        
+
+        // Create a mappping and inverse mapping from each item to its rank and
+        // each rank to the item.  Note that ties are not allowed, so each item
+        // is assigned a unqiue rank, with deterministic tie breaking
         Map<String,Integer> goldRanks = new HashMap<String,Integer>();
         String[] invGoldRank = new String[n];
         for (int i = 0; i < goldOrder.size(); ++i) {
             goldRanks.put(goldOrder.get(i).s, i);
             invGoldRank[i] = goldOrder.get(i).s;
         }
-
         Map<String,Integer> testRanks = new HashMap<String,Integer>();
         String[] invTestRank = new String[n];
         for (int i = 0; i < testOrder.size(); ++i) {
@@ -107,7 +110,6 @@ public class PositionalKendallsTau extends AbstractEvaluation {
                 ? 1 
                 : (p[i] - p[t_i]) / (double)(i - t_i);
 
-            double tmp = 0;
             for (int j = i+1; j < n; ++j) {
 
                 String s2 = invGoldRank[j];
@@ -116,9 +118,9 @@ public class PositionalKendallsTau extends AbstractEvaluation {
                 double jCost = (j == t_j)
                     ? 1
                     : (p[j] - p[t_j]) / (double)(j - t_j);
+
                 if (t_i > t_j) {
                     tauDist += iCost * jCost;
-                    tmp += iCost * jCost;
                 }
             }
         }
@@ -129,7 +131,7 @@ public class PositionalKendallsTau extends AbstractEvaluation {
             int t_i = n - (i + 1);
             double iCost = (i == t_i) ? 1 : (p[i] - p[t_i]) / (i - t_i);
             for (int j = i+1; j < n; ++j) {
-
+                
                 // Assume every pair is reversed
                 int t_j = n - (j + 1);                
                 double jCost = (j == t_j) ? 1 : (p[j] - p[t_j]) / (j - t_j);
@@ -137,7 +139,7 @@ public class PositionalKendallsTau extends AbstractEvaluation {
             }
         }
 
-        return 1 - (tauDist / maxDist);
+        return (maxDist == 0) ? 0 : 1 - (tauDist / maxDist);
     }
 
     /**

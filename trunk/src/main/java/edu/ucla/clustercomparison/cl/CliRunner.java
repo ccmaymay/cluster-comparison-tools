@@ -25,11 +25,14 @@ package edu.ucla.clustercomparison.cl;
 import edu.ucla.clustercomparison.BaseScorer;
 import edu.ucla.clustercomparison.Evaluation;
 
-import java.io.*;
+import java.io.File;
 
-import java.util.*;
+import java.util.logging.Level;
 
 import edu.ucla.sspace.common.ArgOptions;
+
+import edu.ucla.sspace.util.LoggerUtil;
+
 
 
 /**
@@ -42,9 +45,16 @@ public abstract class CliRunner {
     private ArgOptions getBaseOptions() {
         ArgOptions opts = new ArgOptions();
         opts.addOption('n', "no-remapping",
-                          "Treats the input key as having the same sense " +
-                          "inventory and does not remap the sense labels",
-                          false, null, "Program Options");
+                       "Treats the input key as having the same sense " +
+                       "inventory and does not remap the sense labels",
+                       false, null, "Program Options");
+        opts.addOption('v', "verbose",
+                       "Prints verbose output about what the scorer is doing",
+                       false, null, "Program Options");
+        opts.addOption('V', "veryVerbose",
+                       "Prints very verbose output about everything the scorer"+
+                       "is doing",
+                       false, null, "Program Options");
         opts.addOption('r', "output-remapped-key",
                           "If the input labeling is remapped, write the new " +
                           "key to the following file",
@@ -89,6 +99,12 @@ public abstract class CliRunner {
                 "directly compared with the gold standard labels.\n");
             return;
         }
+
+        if (opts.hasOption('v'))
+            LoggerUtil.setLevel("edu.ucla.clustercomparison", Level.FINE);
+        if (opts.hasOption('V'))
+            LoggerUtil.setLevel("edu.ucla.clustercomparison", Level.FINER);
+
         
         BaseScorer scorer = new BaseScorer() {
                 @Override protected Evaluation getEvaluation() {
