@@ -26,7 +26,9 @@ import java.io.*;
 
 import java.util.*;
 
-import java.util.logging.*;
+import java.util.logging.Logger;
+
+import static edu.ucla.sspace.util.LoggerUtil.verbose;
 
 
 /**
@@ -43,7 +45,13 @@ public abstract class BaseScorer {
      * randomness is deterministic thanks to the constant seed.
      */
     static final Random rand = new Random(randomSeed);
-
+    
+    /**
+     * The logger for this class
+     */
+    private static final Logger LOGGER = 
+        Logger.getLogger(BaseScorer.class.getName());;
+    
     /**
      * Computes the score of the evaluation between the two SensEval keys file,
      * optionally performing remapping and optionally writing the remapped key
@@ -111,7 +119,7 @@ public abstract class BaseScorer {
         for (int i = 0; i < 5; ++i)
             trainingSets.add(new HashSet<String>());
         for (int i = 0; i < allInstances.size(); ++i) {
-            String instance = allInstances.get(i); //.split(" ")[1];
+            String instance = allInstances.get(i);
             int toExclude = i % trainingSets.size();
             for (int j = 0; j < trainingSets.size(); ++j) {
                 if (j == toExclude)
@@ -172,8 +180,6 @@ public abstract class BaseScorer {
         int numLabeledTestInstances = 0;
         for (Map<?,?> m : testKey.values())
             numLabeledTestInstances += m.size();
-//         System.out.printf("Loaded %d gold standard instances, and %d test instances%n", 
-//                           allInstances.size(), numLabeledTestInstances);
 
         // Score the test key
         Map<String,Double> instanceScores  
@@ -285,30 +291,23 @@ public abstract class BaseScorer {
                 instancesToTest.addAll(m.keySet());
             instancesToTest.removeAll(trainingInstances);
             
+            verbose(LOGGER, "Testing split %d ", round);
+            
             Map<String,Double> scores = 
                 evaluation.test(remappedTestKey, goldKey, instancesToTest,
                                 termToNumberSenses);
             instanceScores.putAll(scores);
+            round++;
         }
 
         // Finish writing the key 
-        if (outputKeyWriter != null)
-            outputKeyWriter.close();        
+        if (outputKeyWriter != null) {
+            verbose(LOGGER, "Saving remapped key file to ", outputKey);
+            outputKeyWriter.close();  
+        }      
         
         return instanceScores;
     }        
-
-    /**
-     * Loads the lines in a file as a list
-     */
-    static List<String> loadFileAsList(File f) throws IOException {
-        List<String> lines = new ArrayList<String>();
-        BufferedReader br = new BufferedReader(new FileReader(f));
-        for (String line = null; (line = br.readLine()) != null; )
-            lines.add(line);
-        br.close();
-        return lines;
-    }
     
     /**
      * Writes the Senseval key file for this remapping

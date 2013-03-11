@@ -31,6 +31,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import java.util.logging.Logger;
+
+import static edu.ucla.sspace.util.LoggerUtil.veryVerbose;
+
 
 /**
  * An abstract base class for evaluation methods that handles the common
@@ -38,6 +42,12 @@ import java.util.Set;
  * #evaluateInstance(Map,Map,int)} for each instance in common.
  */
 public abstract class AbstractEvaluation implements Evaluation {
+
+    /**
+     * The logger for this class
+     */
+    private final Logger LOGGER =
+        Logger.getLogger(AbstractEvaluation.class.getName());
     
     /**
      * Performs the evaluation on the given sense ratings, where each {@link
@@ -67,6 +77,7 @@ public abstract class AbstractEvaluation implements Evaluation {
                  : gold.entrySet()) {
             
             String term = e.getKey();
+            veryVerbose(logger, "testing %s", term);
             Integer numSenses = termToNumSenses.get(term);
             if (numSenses == null) {
                 throw new IllegalStateException("Missing number of senses for " + term);
@@ -103,12 +114,11 @@ public abstract class AbstractEvaluation implements Evaluation {
                 
                 double score = evaluateInstance(goldSenses, testSenses,
                                                 numSenses);
-
+                                
                 if (Double.isNaN(score) || Double.isInfinite(score)) {
-                    System.out.printf("%s:%n%s%n%s%n%d%n", getClass().getName(),
-                                      goldSenses, testSenses, numSenses);
-                    new Error().printStackTrace();
-                    System.exit(1);
+                    throw new IllegalStateException(
+                        getClass().getName() + " returned an evaluation score "+
+                        " that is outside the acceptable bounds: " + score);
                 }
                 instanceToScore.put(instance, score);                
             }
