@@ -77,8 +77,10 @@ public class WeightedNormalizedDiscountedCumulativeGain extends AbstractEvaluati
             // however, we weight this by the relative difference in the gold
             // and test scores to penalize test ratings that produce the same
             // ranking as the gold ranking, but with radically different weights
-            double score = (Math.min(gScore, tScore) / Math.max(gScore, tScore))
-                * (Math.pow(2, 1 + gScore) - 1);
+            double score = (gScore == 0d && tScore == 0d)
+                ? 1 // equivalent to (Math.pow(2, 1 + gScore) - 1)
+                : ((Math.min(gScore, tScore) / Math.max(gScore, tScore))
+                   * (Math.pow(2, 1 + gScore) - 1));
 
             dcg += score / Log.log2_1p(i+1);
         }
@@ -95,7 +97,7 @@ public class WeightedNormalizedDiscountedCumulativeGain extends AbstractEvaluati
             double score = tmp.get(i);
             idcg += Math.pow(2, 1 + score) / Log.log2_1p(rank+1);
         }
-
+        
         return dcg / idcg;
     }
 

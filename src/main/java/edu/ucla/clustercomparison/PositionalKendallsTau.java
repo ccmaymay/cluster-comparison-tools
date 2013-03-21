@@ -54,6 +54,14 @@ public class PositionalKendallsTau extends AbstractEvaluation {
         
         if (all.size() == 1)
             return 1;
+
+        // Sanity check if someone the test key is provided more senses that are
+        // present in the gold standard sense inventory
+        if (all.size() > numSenses) {
+            throw new IllegalStateException(
+                "Expected " + numSenses + " senses, but these instances have "+
+                " a total of " + all.size() + " unique senses: " + all);
+        }
         
         List<P> goldOrder = new ArrayList<P>();
         List<P> testOrder = new ArrayList<P>();
@@ -126,6 +134,42 @@ public class PositionalKendallsTau extends AbstractEvaluation {
         }
 
         // Compute the maxDistance for this instance
+        Map<String,Integer> reversedGoldRanks = new HashMap<String,Integer>();
+        String[] reversedInvGoldRank = new String[n];
+        for (int i = 0; i < goldOrder.size(); ++i) {
+            int rev = goldOrder.size() - (i+1);
+            reversedGoldRanks.put(goldOrder.get(i).s, rev);
+            reversedInvGoldRank[rev] = goldOrder.get(i).s;
+        }
+
+        // For all i,j pairs where i<j       
+        double maxDist = 0;
+        for (int i = 0; i < n; ++i) {
+
+            String s1 = invGoldRank[i];
+            int t_i = reversedGoldRanks.get(s1);
+            
+            // Calculate the cost for this swap
+            double iCost = (i == t_i)
+                ? 1 
+                : (p[i] - p[t_i]) / (double)(i - t_i);
+
+            for (int j = i+1; j < n; ++j) {
+
+                String s2 = invGoldRank[j];
+                int t_j = reversedGoldRanks.get(s2);                                
+                                                
+                double jCost = (j == t_j)
+                    ? 1
+                    : (p[j] - p[t_j]) / (double)(j - t_j);
+                
+                if (t_i > t_j) {
+                    maxDist += iCost * jCost;
+                }
+            }
+        }
+
+        /*
         double maxDist = 0;
         for (int i = 0; i < n; ++i) {
             int t_i = n - (i + 1);
@@ -138,7 +182,8 @@ public class PositionalKendallsTau extends AbstractEvaluation {
                 maxDist += iCost * jCost;
             }
         }
-
+        */
+       
         return (maxDist == 0) ? 0 : 1 - (tauDist / maxDist);
     }
 

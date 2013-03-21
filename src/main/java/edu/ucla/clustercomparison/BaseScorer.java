@@ -67,8 +67,8 @@ public abstract class BaseScorer {
      * @param performRemapping whether the test key should have its instance
      *        labels remapped into the gold key's label set
      */
-    public double score(File goldKeyFile, File testKeyFile,
-                        File outputKeyFile, boolean performRemapping) throws Exception {
+    public double[] score(File goldKeyFile, File testKeyFile,
+                          File outputKeyFile, boolean performRemapping) throws Exception {
 
         // Load the gold standard and induced key files
         Map<String,Map<String,Map<String,Double>>> goldKey = 
@@ -93,7 +93,7 @@ public abstract class BaseScorer {
      * @param performRemapping whether the test key should have its instance
      *        labels remapped into the gold key's label set
      */
-    public double score(Map<String,Map<String,Map<String,Double>>> goldKey,
+    public double[] score(Map<String,Map<String,Map<String,Double>>> goldKey,
                         Map<String,Map<String,Map<String,Double>>> testKey,
                         File outputKeyFile, boolean performRemapping) throws Exception {
         
@@ -164,18 +164,26 @@ public abstract class BaseScorer {
 
         // We approximate the number of senses for this term by examining the
         // totality of senses used for the term in the gold standard labeling.
+        // In the case where the user has specified that they are using the same
+        // sense inventory (perfromRemapping==false), then we also include these
+        // senses, as they use may be referring to senses that aren't in the
+        // gold standard solution.
         Map<String,Integer> termToNumberSenses = 
             new HashMap<String,Integer>();
-
         for (Map.Entry<String,Map<String,Map<String,Double>>> e : goldKey.entrySet()) {
             String term = e.getKey();
             Set<String> senses = new HashSet<String>();
             for (Map<String,Double> ratings : e.getValue().values())
                 senses.addAll(ratings.keySet());
+            if (!performRemapping) {
+                Map<String,Map<String,Double>> m = testKey.get(term);
+                if (m != null) {
+                    for (Map<String,Double> ratings : m.values())
+                        senses.addAll(ratings.keySet());
+                }
+            }
             termToNumberSenses.put(term, senses.size());
         }
-
-
 
         int numLabeledTestInstances = 0;
         for (Map<?,?> m : testKey.values())
@@ -210,6 +218,7 @@ public abstract class BaseScorer {
         // Generate the report
         double allScoresSum = 0;
         double numAnswered = 0;
+        int na = 0;
         System.out.println("===================================================================");
         System.out.printf("term\taverage_score\trecall\tf-score%n");
         System.out.println("-------------------------------------------------------------------");
@@ -219,6 +228,7 @@ public abstract class BaseScorer {
             List<Double> scores = e.getValue();
             double recall = scores.size() / numInstances;
             numAnswered += scores.size();
+            na += scores.size();
             double sum = 0;
             for (Double d : scores) {
                 if (Double.isNaN(d) || Double.isInfinite(d)) 
@@ -238,14 +248,19 @@ public abstract class BaseScorer {
          System.out.println("-------------------------------------------------------------------");
         // Print out the aggregate
         double avg = (numAnswered > 0) ? allScoresSum / numAnswered : 0;
-        double recall = numAnswered / allInstances.size();
+        // Fix the reporting so we don't get 0.999 in some cases for recall,
+        // which at first glance, looks in correct but is really just due to
+        // double underflow
+        double recall = (na == allInstances.size()) 
+            ? 1d
+            : numAnswered / allInstances.size();
         double fscore = (avg + recall > 0) 
             ? (2 * avg * recall) / (avg + recall)
             : 0;
             
          System.out.println("all\t" + avg + "\t" + recall + "\t" + fscore);        
          System.out.println("===================================================================");
-        return fscore;
+         return new double[] { avg, recall, fscore };
     }
 
     /**
