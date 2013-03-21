@@ -22,6 +22,8 @@
 
 package edu.ucla.clustercomparison;
 
+import java.io.File;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,12 +44,17 @@ public class FuzzyBCubed {
             System.out.println("java fuzzy-bcubed.jar gold.key to-evaluate.key");
             return;
         }
+        score(new File(args[0]), new File(args[1]));
+    }
+        
+    public static double[] score(File goldKeyFile, 
+                                 File testKeyFile) throws Exception {
         
         // Load both keys
         Map<String,Map<String,Map<String,Double>>> goldKey = 
-            KeyUtil.loadKey(args[0]);
+            KeyUtil.loadKey(goldKeyFile);
         Map<String,Map<String,Map<String,Double>>> testKey = 
-            KeyUtil.loadKey(args[1]);
+            KeyUtil.loadKey(testKeyFile);
 
         Map<String,Double> termToAvgPrecision = new HashMap<String,Double>();
         Map<String,Double> termToAvgRecall = new HashMap<String,Double>();
@@ -107,7 +114,8 @@ public class FuzzyBCubed {
             
         System.out.println("all\t" + precision + "\t" + recall + "\t" + fscore);        
         System.out.println("===================================================================");
-
+        
+        return new double[] { precision, recall, fscore };
     }
 
     /**

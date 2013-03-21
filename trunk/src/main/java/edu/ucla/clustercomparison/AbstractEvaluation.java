@@ -77,7 +77,7 @@ public abstract class AbstractEvaluation implements Evaluation {
                  : gold.entrySet()) {
             
             String term = e.getKey();
-            veryVerbose(logger, "testing %s", term);
+            veryVerbose(LOGGER, "testing %s", term);
             Integer numSenses = termToNumSenses.get(term);
             if (numSenses == null) {
                 throw new IllegalStateException("Missing number of senses for " + term);
