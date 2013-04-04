@@ -35,32 +35,62 @@ import java.util.Set;
 /**
  * The utility class for loading <a
  * href="http://www.senseval.org/senseval3/scoring">SensEval</a> keys from a
- * file.  A key is represented as a {@link Map} from each of its terms to the
- * annotations for each of its associated instances.  Instances are represented
- * as a {@link Map} from the instance identifier to a second {@link Map} from
- * each sense key to its numeric rating.
+ * file.  A key is represented as a {@link Map} from each of its documents to
+ * the annotations for each of its associated instances.  Instances are
+ * represented as a {@link Map} from the instance identifier to a second {@link
+ * Map} from each sense key to its numeric rating.
  */
 public class KeyUtil {
 
+    public static boolean loadWithStrictParsing = false;
+
     /**
-     * Loads a key file returning a mapping from each term to its instances,
+     * Loads a key file returning a mapping from each document to its instances,
      * where an instance is a mapping from an instance key to the graded senses
-     * that were present in that instance.
+     * that were present in that instance, ignoring lines that are malformed.
      */
     public static Map<String,Map<String,Map<String,Double>>> 
             loadKey(String filename) throws IOException {
-        return loadKey(new File(filename));
+        return loadKey(new File(filename), loadWithStrictParsing);
     }
 
     /**
-     * Loads a key file returning a mapping from each term to its instances,
+     * Loads a key file returning a mapping from each document to its instances,
      * where an instance is a mapping from an instance key to the graded senses
-     * that were present in that instance.
+     * that were present in that instance, optionally ignoring lines that are
+     * malformed.
+     *
+     * @param isStrict if {@code true} lines that are malformed will cause an
+     *        {@link IllegalStateException} to be thrown
+     */
+    public static Map<String,Map<String,Map<String,Double>>> 
+            loadKey(String filename, boolean isStrict) throws IOException {
+        return loadKey(new File(filename), isStrict);
+    }
+
+    /**
+     * Loads a key file returning a mapping from each document to its instances,
+     * where an instance is a mapping from an instance key to the graded senses
+     * that were present in that instance, ignoring lines that are malformed.
      */
     public static Map<String,Map<String,Map<String,Double>>> 
             loadKey(File file) throws IOException {
+        return loadKey(file, loadWithStrictParsing);
+    }
 
-        Map<String,Map<String,Map<String,Double>>> termToInstances =
+    /**
+     * Loads a key file returning a mapping from each document to its instances,
+     * where an instance is a mapping from an instance key to the graded senses
+     * that were present in that instance, optionally ignoring lines that are
+     * malformed.
+     *
+     * @param isStrict if {@code true} lines that are malformed will cause an
+     *        {@link IllegalStateException} to be thrown
+     */
+    public static Map<String,Map<String,Map<String,Double>>> 
+           loadKey(File file, boolean isStrict) throws IOException {
+
+        Map<String,Map<String,Map<String,Double>>> documentToInstances =
             new LinkedHashMap<String,Map<String,Map<String,Double>>>();
 
         BufferedReader br = new BufferedReader(new FileReader(file));
@@ -68,12 +98,17 @@ public class KeyUtil {
         for (String line = null; (line = br.readLine()) != null; lineNo++) {
             String[] arr = line.split(" ");
             if (arr.length < 3) {
-                throw new Error(
+                // If the parsing doesn't need to be strict, just ignore this
+                // line
+                if (!isStrict)
+                    continue;
+                throw new IllegalStateException(
                     "Malformed sense description on line " + lineNo +
-                    ".  See http://www.senseval.org/senseval3/scoring " +
+                    " in file " + file + ":\n" + line +
+                    "\nSee http://www.senseval.org/senseval3/scoring " +
                     "for format details");
             }
-            String term = arr[0];
+            String document = arr[0];
             String instanceId = arr[1];
 
             // Iterate over all the senses with associated weights.  Per format
@@ -132,14 +167,14 @@ public class KeyUtil {
             // When the sense weights have been properly set or normalized, add
             // them to the instance mapping
             Map<String,Map<String,Double>> instanceToSenses = 
-                termToInstances.get(term);
+                documentToInstances.get(document);
             if (instanceToSenses == null) {
                 instanceToSenses = new LinkedHashMap<String,Map<String,Double>>();
-                termToInstances.put(term, instanceToSenses);
+                documentToInstances.put(document, instanceToSenses);
             }
             instanceToSenses.put(instanceId, senseWeights);
         }
         br.close();
-        return termToInstances;
+        return documentToInstances;
     }
 }

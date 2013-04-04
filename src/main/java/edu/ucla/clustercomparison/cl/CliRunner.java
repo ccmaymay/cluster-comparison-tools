@@ -24,6 +24,8 @@ package edu.ucla.clustercomparison.cl;
 
 import edu.ucla.clustercomparison.BaseScorer;
 import edu.ucla.clustercomparison.Evaluation;
+import edu.ucla.clustercomparison.GradedSingleSenseKeyMapper;
+import edu.ucla.clustercomparison.KeyUtil;
 
 import java.io.File;
 
@@ -48,6 +50,11 @@ public abstract class CliRunner {
                        "Treats the input key as having the same sense " +
                        "inventory and does not remap the sense labels",
                        false, null, "Program Options");
+        opts.addOption('s', "use-single-sense-remapping",
+                       "When performing remapping, outputs only a single " + 
+                       "sense label, no matter how many senses were used in " +
+                       "the input key",
+                       false, null, "Program Options");
         opts.addOption('v', "verbose",
                        "Prints verbose output about what the scorer is doing",
                        false, null, "Program Options");
@@ -56,9 +63,14 @@ public abstract class CliRunner {
                        "is doing",
                        false, null, "Program Options");
         opts.addOption('r', "output-remapped-key",
-                          "If the input labeling is remapped, write the new " +
-                          "key to the following file",
-                          true, "FILE", "Program Options");
+                       "If the input labeling is remapped, write the new " +
+                       "key to the following file",
+                       true, "FILE", "Program Options");
+        opts.addOption('S', "use-strict-key-parsing",
+                       "Causes an Exception to be thrown if any of the sense " +
+                       "keys is malfomatted",
+                       false, null, "Program Options");
+
         return opts;
     }
 
@@ -104,7 +116,10 @@ public abstract class CliRunner {
             LoggerUtil.setLevel("edu.ucla.clustercomparison", Level.FINE);
         if (opts.hasOption('V'))
             LoggerUtil.setLevel("edu.ucla.clustercomparison", Level.FINER);
-
+        // This is kind of a hack... :(
+        if (opts.hasOption('S'))
+            KeyUtil.loadWithStrictParsing = true;
+        
         
         BaseScorer scorer = new BaseScorer() {
                 @Override protected Evaluation getEvaluation() {
@@ -118,10 +133,18 @@ public abstract class CliRunner {
             : null;
 
         try {
-            scorer.score(new File(opts.getPositionalArg(0)),
-                         new File(opts.getPositionalArg(1)),
-                         remappedKeyFile,
-                         performRemapping);
+            if (opts.hasOption('s')) {
+                scorer.score(new File(opts.getPositionalArg(0)),
+                             new File(opts.getPositionalArg(1)),
+                             remappedKeyFile,
+                             new GradedSingleSenseKeyMapper());
+            }
+            else {
+                scorer.score(new File(opts.getPositionalArg(0)),
+                             new File(opts.getPositionalArg(1)),
+                             remappedKeyFile,
+                             performRemapping);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -65,10 +65,12 @@ public abstract class BaseScorer {
      * @param outputKeyFile if {@code performRemapping} is {@code true}, the
      *        remapped key is written to this file if non-{@code null}.
      * @param performRemapping whether the test key should have its instance
-     *        labels remapped into the gold key's label set
+     *        labels remapped into the gold key's label set using the default
+     *        {@link GradedReweightedKeyMapper} algorithm
      */
     public double[] score(File goldKeyFile, File testKeyFile,
-                          File outputKeyFile, boolean performRemapping) throws Exception {
+                          File outputKeyFile, boolean performRemapping) 
+              throws Exception {
 
         // Load the gold standard and induced key files
         Map<String,Map<String,Map<String,Double>>> goldKey = 
@@ -77,6 +79,34 @@ public abstract class BaseScorer {
             KeyUtil.loadKey(testKeyFile);     
         
         return score(goldKey, testKey, outputKeyFile, performRemapping);
+    }
+
+    /**
+     * Computes the score of the evaluation between the two SensEval keys file,
+     * optionally performing remapping and optionally writing the remapped key
+     * to {@code outputKeyFile}.
+     *
+     * @param goldKeyFile the SensEval key file against which the test key is to
+     *        compared
+     * @param testKeyFile the SensEval key file to be compared.  If the key is
+     *        using a different sense inventory, {@code performRemapping} should
+     *        be set to {@code true}.
+     * @param outputKeyFile if {@code performRemapping} is {@code true}, the
+     *        remapped key is written to this file if non-{@code null}.
+     * @param keyMapper an algorithm for converting sense keys in one inventory
+     *        into another, or {@code null} if no remapping is to be performed
+     */
+    public double[] score(File goldKeyFile, File testKeyFile,
+                          File outputKeyFile, KeyMapper keyMapper) 
+            throws Exception {
+
+        // Load the gold standard and induced key files
+        Map<String,Map<String,Map<String,Double>>> goldKey = 
+            KeyUtil.loadKey(goldKeyFile);
+        Map<String,Map<String,Map<String,Double>>> testKey = 
+            KeyUtil.loadKey(testKeyFile);     
+        
+        return score(goldKey, testKey, outputKeyFile, keyMapper);
     }
 
     /**
@@ -91,11 +121,37 @@ public abstract class BaseScorer {
      * @param outputKeyFile if {@code performRemapping} is {@code true}, the
      *        remapped key is written to this file if non-{@code null}.
      * @param performRemapping whether the test key should have its instance
-     *        labels remapped into the gold key's label set
+     *        labels remapped into the gold key's label set using the default
+     *        {@link GradedReweightedKeyMapper} algorithm
      */
     public double[] score(Map<String,Map<String,Map<String,Double>>> goldKey,
                         Map<String,Map<String,Map<String,Double>>> testKey,
-                        File outputKeyFile, boolean performRemapping) throws Exception {
+                        File outputKeyFile, boolean performRemapping) 
+            throws Exception {
+        return score(goldKey, testKey, outputKeyFile, 
+                     ((performRemapping) 
+                      ? new GradedReweightedKeyMapper() : null));
+    }
+
+    /**
+     * Computes the score of the evaluation between the two keys, optionally
+     * performing remapping and optionally writing the remapped key to {@code
+     * outputKeyFile}.
+     *
+     * @param goldKey the key against which the test key is to compared
+     * @param testKey the key to be compared.  If the key is using a different
+     *        sense inventory, {@code performRemapping} should be set to {@code
+     *        true}.
+     * @param outputKeyFile if {@code performRemapping} is {@code true}, the
+     *        remapped key is written to this file if non-{@code null}.
+     * @param keyMapper an algorithm for converting sense keys in one inventory
+     *        into another, or {@code null} if no remapping is to be performed
+     */
+    public double[] score(Map<String,Map<String,Map<String,Double>>> goldKey,
+                          Map<String,Map<String,Map<String,Double>>> testKey,
+                          File outputKeyFile, KeyMapper keyMapper) 
+            throws Exception {
+
         
         PrintWriter outputGradedVectorKey = 
             (outputKeyFile == null) ? null : new PrintWriter(outputKeyFile);
@@ -175,7 +231,7 @@ public abstract class BaseScorer {
             Set<String> senses = new HashSet<String>();
             for (Map<String,Double> ratings : e.getValue().values())
                 senses.addAll(ratings.keySet());
-            if (!performRemapping) {
+            if (keyMapper == null) {
                 Map<String,Map<String,Double>> m = testKey.get(term);
                 if (m != null) {
                     for (Map<String,Double> ratings : m.values())
@@ -185,15 +241,11 @@ public abstract class BaseScorer {
             termToNumberSenses.put(term, senses.size());
         }
 
-        int numLabeledTestInstances = 0;
-        for (Map<?,?> m : testKey.values())
-            numLabeledTestInstances += m.size();
-
         // Score the test key
         Map<String,Double> instanceScores  
-            = runEval(getEvaluation(), new GradedReweightedKeyMapper(), 
+            = runEval(getEvaluation(), keyMapper,
                       goldKey, testKey, trainingSets, 
-                      allInstances, outputKeyFile, performRemapping,
+                      allInstances, outputKeyFile, keyMapper != null,
                       termToNumberSenses);
         
         
