@@ -300,12 +300,12 @@ public abstract class BaseScorer {
          System.out.println("-------------------------------------------------------------------");
         // Print out the aggregate
         double avg = (numAnswered > 0) ? allScoresSum / numAnswered : 0;
-        // Fix the reporting so we don't get 0.999 in some cases for recall,
-        // which at first glance, looks in correct but is really just due to
-        // double underflow
+        // Recall is the percentage of all instances that were answered
+        // correctly.  If a test key answers all instances, recall is the same
+        // as precision
         double recall = (na == allInstances.size()) 
-            ? 1d
-            : numAnswered / allInstances.size();
+            ? avg
+            : avg * (numAnswered / allInstances.size());
         double fscore = (avg + recall > 0) 
             ? (2 * avg * recall) / (avg + recall)
             : 0;
@@ -338,6 +338,11 @@ public abstract class BaseScorer {
         PrintWriter outputKeyWriter = (outputKey == null) 
             ? null : new PrintWriter(outputKey);
 
+        Map<String,Map<String,Map<String,Double>>> allRemappedTestKey        
+            = (performRemapping && outputKeyWriter != null) 
+            ? new TreeMap<String,Map<String,Map<String,Double>>>()
+            : null;
+
         int round = 0;
         for (Set<String> trainingInstances : trainingSets) {
 
@@ -349,11 +354,33 @@ public abstract class BaseScorer {
             
             // If the user has specified that we need to produce the output key,
             // write it now
-            if (outputKeyWriter != null)
-                writeKey(remappedTestKey, outputKeyWriter);
+            if (performRemapping && outputKeyWriter != null) {
+                // Merge this remapped test set with the total key
+                for (Map.Entry<String,Map<String,Map<String,Double>>> e 
+                         : remappedTestKey.entrySet()) {
+                    String doc = e.getKey();
+                    Map<String,Map<String,Double>> instRatings = e.getValue();
+                    Map<String,Map<String,Double>> curInstRatings = 
+                        allRemappedTestKey.get(doc);
+                    if (curInstRatings == null) {
+                        // Sort them so that term.pos.2 < term.pos.10
+                        curInstRatings = new TreeMap<String,Map<String,Double>>(
+                            new InstanceComparator());
+                        curInstRatings.putAll(instRatings);
+                        allRemappedTestKey.put(doc, curInstRatings);
+                    }
+                    else {
+                        assert Collections.disjoint(
+                            curInstRatings.keySet(), instRatings.keySet())
+                            : "Overlapping instances in the test / train sets";
+                        curInstRatings.putAll(instRatings);
+                    }
+                }
+            }
+                
 
             // Determine which set of instances should be tested
-            Set<String> instancesToTest = new HashSet<String>();
+            Set<String> instancesToTest = new LinkedHashSet<String>();
             for (Map<String,?> m : goldKey.values())
                 instancesToTest.addAll(m.keySet());
             instancesToTest.removeAll(trainingInstances);
@@ -369,7 +396,18 @@ public abstract class BaseScorer {
 
         // Finish writing the key 
         if (outputKeyWriter != null) {
+
+            for (Map.Entry<String,Map<String,Map<String,Double>>> e : 
+                     goldKey.entrySet()) {
+                String t = e.getKey();
+                Set<String> toRetain = e.getValue().keySet();
+                Map<String,Map<String,Double>> test = allRemappedTestKey.get(t);
+                if (test != null)
+                    test.keySet().retainAll(toRetain);
+            }
+
             verbose(LOGGER, "Saving remapped key file to ", outputKey);
+            writeKey(allRemappedTestKey, outputKeyWriter);
             outputKeyWriter.close();  
         }      
         
@@ -398,6 +436,30 @@ public abstract class BaseScorer {
                 }
                 pw.println(sb);
             }
+        }
+    }
+
+    static class InstanceComparator implements Comparator<String> {
+
+        /**
+         * Compares instances labeled as term.pos.number, sorting them by term,
+         * pos, and number.
+         */
+        public int compare(String s1, String s2) {
+            String[] arr1 = s1.split("\\.");
+            String[] arr2 = s2.split("\\.");
+            // Sort by term first
+            int m = arr1[0].compareTo(arr2[0]);
+            if (m != 0)
+                return m;
+            // Then by pos
+            m = arr1[1].compareTo(arr2[1]);
+            if (m != 0)
+                return m;
+            // Last by number
+            int i = Integer.parseInt(arr1[2]);
+            int j = Integer.parseInt(arr2[2]);
+            return i - j;
         }
     }
 }

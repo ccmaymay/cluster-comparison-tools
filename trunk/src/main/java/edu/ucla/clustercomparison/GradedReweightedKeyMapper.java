@@ -94,8 +94,8 @@ public class GradedReweightedKeyMapper implements KeyMapper {
 
         // Create a mapping from each of the sense labels to an index in the
         // mapping matrix
-        Map<String,Integer> goldSenseIds = new HashMap<String,Integer>();
-        Map<String,Integer> testSenseIds = new HashMap<String,Integer>();
+        Map<String,Integer> goldSenseIds = new LinkedHashMap<String,Integer>();
+        Map<String,Integer> testSenseIds = new LinkedHashMap<String,Integer>();
 
         for (String instanceId : trainingInstanceIds) {
             Map<String,Double> gsPerceptions = goldInstances.get(instanceId);
