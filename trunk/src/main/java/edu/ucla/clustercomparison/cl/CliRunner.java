@@ -60,7 +60,7 @@ public abstract class CliRunner {
                        false, null, "Program Options");
         opts.addOption('V', "veryVerbose",
                        "Prints very verbose output about everything the scorer"+
-                       "is doing",
+                       " is doing",
                        false, null, "Program Options");
         opts.addOption('r', "output-remapped-key",
                        "If the input labeling is remapped, write the new " +
@@ -108,7 +108,9 @@ public abstract class CliRunner {
                 "sense inventory should\n" + 
                 "be sure to use the --no-remapping option to ensure that " +
                 "their labels are\n" + 
-                "directly compared with the gold standard labels.\n");
+                "directly compared with the gold standard labels.\n\n" +
+                "Please report any errors or problem to our google code site:"+
+                "\nhttps://code.google.com/p/cluster-comparison-tools/");
             return;
         }
 

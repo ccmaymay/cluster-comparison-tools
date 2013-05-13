@@ -214,7 +214,11 @@ public class GradedReweightedKeyMapper implements KeyMapper {
                 }
             }
 
-            remapped.put(testInstanceId, remappedPerceptions);
+            // If we were able to map the test key labeling to at least one
+            // sense in the gold standard sense inventory, then report the
+            // labeling.  Otherwise, just omit an empty labeling.
+            if (!remappedPerceptions.isEmpty())
+                remapped.put(testInstanceId, remappedPerceptions);
         }
 
         return remapped;
