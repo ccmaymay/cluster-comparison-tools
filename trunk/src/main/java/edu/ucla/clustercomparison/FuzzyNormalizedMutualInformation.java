@@ -198,7 +198,7 @@ public class FuzzyNormalizedMutualInformation {
                 // If we didn't find another sense labeling that wasn't an
                 // inverse of this label, use H(g)
                 if (h_gT == Double.MAX_VALUE)
-                    h_gT = DifferentialEntropy.compute2(gInstanceRatings);
+                    h_gT = DiscretizedDifferentialEntropy.compute(gInstanceRatings);
                     
                 // Note the division here to normalize the total for H(G|T)
                 h_GT += h_gT; 
