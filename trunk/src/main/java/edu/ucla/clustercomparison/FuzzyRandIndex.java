@@ -69,7 +69,16 @@ public class FuzzyRandIndex {
                 termToFri.put(term, 0d);
                 continue;
             }
-            
+
+            // NOTE: sometimes the gold key will contain fewer instances than
+            // the test key, e.g., when the provided gold key is only a subset
+            // of the instances and the user is providing their same systems
+            // key.  In such cases, the correct behavior is to filter down the
+            // test key to only contain those instances in the gold key.  Thanks
+            // to Jing Wang for noticing this bug.
+            instanceToTestRatings.keySet()
+                .retainAll(instanceToGoldRatings.keySet());
+
             double fuzzyRandIndex = computeRI(instanceToGoldRatings,
                                               instanceToTestRatings);
 
