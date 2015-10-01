@@ -1,0 +1,1 @@
+The cluster-comparison-tools package is a suite of command-line tools for comparing the similarity of fuzzy clusters using several established and new measures.  This suite of tools is used in the comparison evaluation of the SemEval-2013 Task 13 setting, which looks at grouping word uses according to their similarity in meaning.
